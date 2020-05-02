@@ -1,3 +1,7 @@
 img.img-responsive {
   max-height: 300px;
 }
+
+.add-button {
+  cursor: pointer;
+}
