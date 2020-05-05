@@ -2,6 +2,6 @@ img.img-responsive {
   max-height: 300px;
 }
 
-.add-button {
+.dropdown-menu__button {
   cursor: pointer;
 }

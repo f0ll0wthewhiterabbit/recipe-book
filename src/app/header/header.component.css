@@ -1,0 +1,4 @@
+.dropdown .dropdown-toggle,
+.dropdown-menu__button {
+  cursor: pointer;
+}
