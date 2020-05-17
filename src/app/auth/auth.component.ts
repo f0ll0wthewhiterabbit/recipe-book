@@ -1,7 +1,10 @@
-import { Component, ComponentFactoryResolver, ViewChild, OnDestroy } from '@angular/core'
+import { Component, ComponentFactoryResolver, ViewChild, OnDestroy, OnInit } from '@angular/core'
 import { NgForm } from '@angular/forms'
 import { Router } from '@angular/router'
 import { Observable, Subscription } from 'rxjs'
+import { Store } from '@ngrx/store'
+import * as fromApp from '../store/app.reducer'
+import * as AuthActions from '../auth/store/auth.actions'
 
 import { AuthService, AuthResponseData } from './auth.service'
 import { AlertComponent } from '../shared/alert/alert.component'
@@ -12,7 +15,7 @@ import { PlaceholderDirective } from '../shared/placeholder/placeholder.directiv
   templateUrl: './auth.component.html',
   styleUrls: ['./auth.component.css'],
 })
-export class AuthComponent implements OnDestroy {
+export class AuthComponent implements OnInit, OnDestroy {
   isLoginMode = true
   isLoading = false
   error: string = null
@@ -22,8 +25,20 @@ export class AuthComponent implements OnDestroy {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private componentFactoryResolver: ComponentFactoryResolver
+    private componentFactoryResolver: ComponentFactoryResolver,
+    private store: Store<fromApp.AppState>
   ) {}
+
+  ngOnInit() {
+    this.store.select('auth').subscribe((authState) => {
+      this.isLoading = authState.loading
+      this.error = authState.authError
+
+      if (this.error) {
+        this.showErrorAlert(this.error)
+      }
+    })
+  }
 
   onSwitchMode() {
     this.isLoginMode = !this.isLoginMode
@@ -41,23 +56,10 @@ export class AuthComponent implements OnDestroy {
     let authObservable: Observable<AuthResponseData>
 
     if (this.isLoginMode) {
-      authObservable = this.authService.login(email, password)
+      this.store.dispatch(new AuthActions.LoginStart({ email, password }))
     } else {
       authObservable = this.authService.signup(email, password)
     }
-
-    authObservable.subscribe(
-      (responseData: AuthResponseData) => {
-        this.isLoading = false
-        this.error = null
-        this.router.navigate(['/recipes'])
-      },
-      (errorMessage: string) => {
-        this.error = errorMessage
-        this.showErrorAlert(errorMessage)
-        this.isLoading = false
-      }
-    )
 
     form.reset()
   }
