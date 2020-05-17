@@ -1,12 +1,10 @@
 import { Component, ComponentFactoryResolver, ViewChild, OnDestroy, OnInit } from '@angular/core'
 import { NgForm } from '@angular/forms'
-import { Router } from '@angular/router'
-import { Observable, Subscription } from 'rxjs'
+import { Subscription } from 'rxjs'
 import { Store } from '@ngrx/store'
 import * as fromApp from '../store/app.reducer'
 import * as AuthActions from '../auth/store/auth.actions'
 
-import { AuthService, AuthResponseData } from './auth.service'
 import { AlertComponent } from '../shared/alert/alert.component'
 import { PlaceholderDirective } from '../shared/placeholder/placeholder.directive'
 
@@ -21,16 +19,15 @@ export class AuthComponent implements OnInit, OnDestroy {
   error: string = null
   @ViewChild(PlaceholderDirective) alertHost: PlaceholderDirective
   private closeSubscription: Subscription
+  private storeSubscription: Subscription
 
   constructor(
-    private authService: AuthService,
-    private router: Router,
     private componentFactoryResolver: ComponentFactoryResolver,
     private store: Store<fromApp.AppState>
   ) {}
 
   ngOnInit() {
-    this.store.select('auth').subscribe((authState) => {
+    this.storeSubscription = this.store.select('auth').subscribe((authState) => {
       this.isLoading = authState.loading
       this.error = authState.authError
 
@@ -53,19 +50,17 @@ export class AuthComponent implements OnInit, OnDestroy {
     const password = form.value.password
     this.isLoading = true
 
-    let authObservable: Observable<AuthResponseData>
-
     if (this.isLoginMode) {
       this.store.dispatch(new AuthActions.LoginStart({ email, password }))
     } else {
-      authObservable = this.authService.signup(email, password)
+      this.store.dispatch(new AuthActions.SignUpStart({ email, password }))
     }
 
     form.reset()
   }
 
   onHandleError() {
-    this.error = null
+    this.store.dispatch(new AuthActions.ClearError())
   }
 
   private showErrorAlert(message: string) {
@@ -87,6 +82,10 @@ export class AuthComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.closeSubscription) {
       this.closeSubscription.unsubscribe()
+    }
+
+    if (this.storeSubscription) {
+      this.storeSubscription.unsubscribe()
     }
   }
 }
